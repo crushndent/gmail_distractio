@@ -1,17 +1,11 @@
-function forceUpdate() {
-  // Add a temporary class to the body element
-  const body = document.body;
-  if (body) {
-    // Add a temporary class to force a reflow
-    body.classList.add('gmail-refresh-trigger');
+function forceUpdate(action) {
+  // We'll pass an action parameter to determine if we're hiding or showing
+  try {
+    console.log(`Forcing page refresh for action: ${action}`);
+    // Reload the current page to properly apply CSS changes
     
-    // Force a browser reflow by accessing offsetHeight
-    void body.offsetHeight;
-    
-    // Remove the class after a brief delay
-    setTimeout(() => {
-      body.classList.remove('gmail-refresh-trigger');
-    }, 100);
+  } catch (error) {
+    console.error("Error in forceUpdate:", error);
   }
 }
 
@@ -25,66 +19,65 @@ function hidePromotionsTab() {
     const currentHour = new Date().getHours();
     console.log(`Current hour: ${currentHour}, Start: ${startHour}, End: ${endHour}`);
 
-    if (currentHour >= startHour && currentHour < endHour && !disable) {
-      console.log("Attempting to hide the Promotions tab...");
-      chrome.tabs.query({ url: "https://mail.google.com/*" }, (tabs) => {
-        console.log("Found Gmail tabs:", tabs);
-        if (tabs.length === 0) {
-          console.log("No Gmail tabs were found.");
+    chrome.tabs.query({ url: "https://mail.google.com/*" }, (tabs) => {
+      console.log("Found Gmail tabs:", tabs);
+      if (tabs.length === 0) {
+        console.log("No Gmail tabs were found.");
+      }
+      else{
+        if (currentHour >= startHour && currentHour < endHour && !disable) {
+          tabs.forEach((tab) => {
+            console.log(`Attempting to hide element in tab: ${tab.id}`);
+            chrome.scripting.insertCSS({
+              target: { tabId: tab.id },
+              css: 'div[aria-label^="Promotions"] { display: none !important; }'
+            });
+            chrome.scripting.insertCSS({
+              target: { tabId: tab.id },
+              css: 'div[aria-label^="Updates"] { display: none !important; }'
+            });
+            // Force a visual update by adding and removing a class
+            chrome.scripting.executeScript({
+              target: { tabId: tab.id, allFrames: true },
+              func: forceUpdate,
+              args: ['hide']
+            });
+          });
         }
-        tabs.forEach((tab) => {
-          console.log(`Attempting to hide element in tab: ${tab.id}`);
-          chrome.scripting.insertCSS({
-            target: { tabId: tab.id },
-            css: 'div[aria-label^="Promotions"] { display: none !important; }'
+        else {
+          console.log("Attempting to unhide the Promotions tab...");
+          chrome.tabs.query({ url: "https://mail.google.com/*" }, (tabs) => {
+            console.log("Found Gmail tabs:", tabs);
+            tabs.forEach((tab) => {
+              console.log(`Attempting to show element in tab: ${tab.id}`);
+              chrome.scripting.removeCSS({
+                target: { tabId: tab.id },
+                css: 'div[aria-label^="Promotions"] { display: none !important; }'
+              });
+              chrome.scripting.removeCSS({
+                target: { tabId: tab.id },
+                css: 'div[aria-label^="Updates"] { display: none !important; }'
+              });
+              // Force a visual update by adding and removing a class
+              chrome.scripting.executeScript({
+                target: { tabId: tab.id, allFrames: true },
+                func: forceUpdate,
+                args: ['show']
+              });
+            });
           });
-          chrome.scripting.insertCSS({
-            target: { tabId: tab.id },
-            css: 'div[aria-label^="Updates"] { display: none !important; }'
-          });
-          // Force a visual update by adding and removing a class
-          chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            func: forceUpdate
-          });
-        });
-      });
-    } else {
-      console.log("Attempting to unhide the Promotions tab...");
-      chrome.tabs.query({ url: "https://mail.google.com/*" }, (tabs) => {
-        console.log("Found Gmail tabs:", tabs);
-        tabs.forEach((tab) => {
-          console.log(`Attempting to show element in tab: ${tab.id}`);
-          chrome.scripting.removeCSS({
-            target: { tabId: tab.id },
-            css: 'div[aria-label^="Promotions"] { display: none !important; }'
-          });
-          chrome.scripting.removeCSS({
-            target: { tabId: tab.id },
-            css: 'div[aria-label^="Updates"] { display: none !important; }'
-          });
-          // Force a visual update by adding and removing a class
-          chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            func: forceUpdate
-          });
-        });
-      });
-      if (disable) {
-        console.log("Not hiding tabs, disabled.");
-      } else {
-        console.log("Not hiding tabs, outside of specified hours.");
+        }
+        if (disable) {
+          console.log("Disable is on, setting timer for 60 seconds");
+          setTimeout(() => {
+            chrome.storage.sync.set({ disable: false }, () => {
+              console.log("Disable turned off after 60 seconds");
+              hidePromotionsTab();
+            });
+          }, 15000);
+        }
       }
-      if (disable) {
-        console.log("Disable is on, setting timer for 60 seconds");
-        setTimeout(() => {
-          chrome.storage.sync.set({ disable: false }, () => {
-            console.log("Disable turned off after 60 seconds");
-            hidePromotionsTab();
-          });
-        }, 15000);
-      }
-    }
+    });
   });
 }
 
