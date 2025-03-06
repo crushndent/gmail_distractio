@@ -1,4 +1,20 @@
-// background.js
+function forceUpdate() {
+  // Add a temporary class to the body element
+  const body = document.body;
+  if (body) {
+    // Add a temporary class to force a reflow
+    body.classList.add('gmail-refresh-trigger');
+    
+    // Force a browser reflow by accessing offsetHeight
+    void body.offsetHeight;
+    
+    // Remove the class after a brief delay
+    setTimeout(() => {
+      body.classList.remove('gmail-refresh-trigger');
+    }, 100);
+  }
+}
+
 function hidePromotionsTab() {
   console.log("hidePromotionsTab() called");
   chrome.storage.sync.get(['startHour', 'endHour', 'disable'], (result) => {
