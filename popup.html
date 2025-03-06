@@ -1,4 +1,3 @@
-// popup.html
 <!DOCTYPE html>
 <html>
 <head>
@@ -9,13 +8,15 @@
 </head>
 <body>
   <h1>Gmail Tab Hider</h1>
-  <label for="startHour">Start Hour (0-23):</label>
-  <input type="number" id="startHour" min="0" max="23" value="9"><br>
-  <label for="endHour">End Hour (0-23):</label>
-  <input type="number" id="endHour" min="0" max="23" value="17"><br>  
-  <label for="disable">Disable:</label>
-  <input type="checkbox" id="disable"><br>
-  <button id="saveButton">Save</button>
-  <script src="popup.js"></script>
+<form id="settingsForm">
+    <label for="startHour">Start Hour (0-23):</label>
+    <input type="number" id="startHour" min="0" max="23" value="9"><br>
+    <label for="endHour">End Hour (0-23):</label>
+    <input type="number" id="endHour" min="0" max="23" value="17"><br>  
+    <label for="disable">Disable:</label>
+    <input type="checkbox" id="disable"><br>
+    <button type="button" id="saveButton">Save</button>
+</form>
+<script src="popup.js"></script>
 </body>
 </html>

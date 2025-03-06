@@ -9,8 +9,8 @@ function forceUpdate(action) {
   }
 }
 
-function hidePromotionsTab() {
-  console.log("hidePromotionsTab() called");
+function show_hide_tabs() {
+  console.log("show_hide_tabs() called");
   chrome.storage.sync.get(['startHour', 'endHour', 'disable'], (result) => {
     console.log("Retrieved settings:", result);
     const startHour = result.startHour || 9;
@@ -26,53 +26,18 @@ function hidePromotionsTab() {
       }
       else{
         if (currentHour >= startHour && currentHour < endHour && !disable) {
-          tabs.forEach((tab) => {
-            console.log(`Attempting to hide element in tab: ${tab.id}`);
-            chrome.scripting.insertCSS({
-              target: { tabId: tab.id },
-              css: 'div[aria-label^="Promotions"] { display: none !important; }'
-            });
-            chrome.scripting.insertCSS({
-              target: { tabId: tab.id },
-              css: 'div[aria-label^="Updates"] { display: none !important; }'
-            });
-            // Force a visual update by adding and removing a class
-            chrome.scripting.executeScript({
-              target: { tabId: tab.id, allFrames: true },
-              func: forceUpdate,
-              args: ['hide']
-            });
-          });
+          hide_tabs(tabs);
         }
         else {
-          console.log("Attempting to unhide the Promotions tab...");
-          chrome.tabs.query({ url: "https://mail.google.com/*" }, (tabs) => {
-            console.log("Found Gmail tabs:", tabs);
-            tabs.forEach((tab) => {
-              console.log(`Attempting to show element in tab: ${tab.id}`);
-              chrome.scripting.removeCSS({
-                target: { tabId: tab.id },
-                css: 'div[aria-label^="Promotions"] { display: none !important; }'
-              });
-              chrome.scripting.removeCSS({
-                target: { tabId: tab.id },
-                css: 'div[aria-label^="Updates"] { display: none !important; }'
-              });
-              // Force a visual update by adding and removing a class
-              chrome.scripting.executeScript({
-                target: { tabId: tab.id, allFrames: true },
-                func: forceUpdate,
-                args: ['show']
-              });
-            });
-          });
+          unhide_tabs(tabs);
         }
         if (disable) {
           console.log("Disable is on, setting timer for 60 seconds");
+          unhide_tabs(tabs);
           setTimeout(() => {
             chrome.storage.sync.set({ disable: false }, () => {
               console.log("Disable turned off after 60 seconds");
-              hidePromotionsTab();
+              hide_tabs(tabs);
             });
           }, 15000);
         }
@@ -81,10 +46,54 @@ function hidePromotionsTab() {
   });
 }
 
+function unhide_tabs(tabs) {
+  console.log("Attempting to unhide the tabs");
+  chrome.tabs.query({ url: "https://mail.google.com/*" }, (tabs) => {
+    tabs.forEach((tab) => {
+      console.log(`Attempting to show element in tab: ${tab.id}`);
+      chrome.scripting.removeCSS({
+        target: { tabId: tab.id },
+        css: 'div[aria-label^="Promotions"] { display: none !important; }'
+      });
+      chrome.scripting.removeCSS({
+        target: { tabId: tab.id },
+        css: 'div[aria-label^="Updates"] { display: none !important; }'
+      });
+      // Force a visual update by adding and removing a class
+      chrome.scripting.executeScript({
+        target: { tabId: tab.id, allFrames: true },
+        func: forceUpdate,
+        args: ['show']
+      });
+    });
+  });
+}
+
+function hide_tabs(tabs) {
+  console.log("Attempting to hide the tabs");
+  tabs.forEach((tab) => {
+    console.log(`Attempting to hide element in tab: ${tab.id}`);
+    chrome.scripting.insertCSS({
+      target: { tabId: tab.id },
+      css: 'div[aria-label^="Promotions"] { display: none !important; }'
+    });
+    chrome.scripting.insertCSS({
+      target: { tabId: tab.id },
+      css: 'div[aria-label^="Updates"] { display: none !important; }'
+    });
+    // Force a visual update by adding and removing a class
+    chrome.scripting.executeScript({
+      target: { tabId: tab.id, allFrames: true },
+      func: forceUpdate,
+      args: ['hide']
+    });
+  });
+}
+
 function checkTimeAndHide() {
   console.log("checkTimeAndHide() called");
-  hidePromotionsTab();
-  setTimeout(checkTimeAndHide, 10000); // Check every minute
+  show_hide_tabs();
+  setTimeout(checkTimeAndHide, 20000); // Check every minute
 }
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -100,6 +109,6 @@ chrome.runtime.onStartup.addListener(() => {
 
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     if (request.action === "hideTabsNow") {
-      hidePromotionsTab();
+      show_hide_tabs();
     }
   });
