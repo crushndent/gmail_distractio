@@ -57,7 +57,15 @@ function unhide_tabs(tabs) {
       });
       chrome.scripting.removeCSS({
         target: { tabId: tab.id },
+        css: 'div[aria-label^="Social"] { display: none !important; }'
+      });
+      chrome.scripting.removeCSS({
+        target: { tabId: tab.id },
         css: 'div[aria-label^="Updates"] { display: none !important; }'
+      });
+      chrome.scripting.removeCSS({
+        target: { tabId: tab.id },
+        css: 'div[aria-label^="Forums"] { display: none !important; }'
       });
       // Force a visual update by adding and removing a class
       chrome.scripting.executeScript({
@@ -79,9 +87,17 @@ function hide_tabs(tabs) {
     });
     chrome.scripting.insertCSS({
       target: { tabId: tab.id },
+      css: 'div[aria-label^="Social"] { display: none !important; }'
+    });
+    chrome.scripting.insertCSS({
+      target: { tabId: tab.id },
       css: 'div[aria-label^="Updates"] { display: none !important; }'
     });
-    // Force a visual update by adding and removing a class
+    chrome.scripting.insertCSS({
+      target: { tabId: tab.id },
+      css: 'div[aria-label^="Forums"] { display: none !important; }'
+    });
+  // Force a visual update by adding and removing a class
     chrome.scripting.executeScript({
       target: { tabId: tab.id, allFrames: true },
       func: forceUpdate,
